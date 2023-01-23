@@ -88,9 +88,10 @@ def play_audio(filename: str):
 
 def activate_notify():
     """Play some sound to indicate a wakeword activation when testing a model"""
-    audio = 'data/activate.wav'
-    audio = join(dirname(abspath(__file__)), audio)
-    play_audio(audio)
+    #audio = 'data/activate.wav'
+    #audio = join(dirname(abspath(__file__)), audio)
+    #play_audio(audio)
+    print("\x07")
 
 
 def glob_all(folder: str, filt: str) -> List[str]:

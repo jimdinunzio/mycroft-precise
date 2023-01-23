@@ -26,13 +26,17 @@ Record audio samples for use with precise
 """
 from select import select
 from sys import stdin
-from termios import tcsetattr, tcgetattr, TCSADRAIN
+#from termios import tcsetattr, tcgetattr, TCSADRAIN
 
-import tty
+#import tty
+import time
 import wave
 from os.path import isfile
 from prettyparse import Usage
 from pyaudio import PyAudio
+import keyboard
+
+
 
 from precise.scripts.base_script import BaseScript
 
@@ -62,25 +66,36 @@ def save_audio(name, data, args):
 
 
 class CollectScript(BaseScript):
-    RECORD_KEY = ' '
-    EXIT_KEY_CODE = 27
+    RECORD_KEY = 'space'
+    EXIT_KEY_CODE = 'esc'
 
     usage = Usage(__doc__)
     usage.add_argument('file_label', nargs='?', help='File label (Ex. recording-##)')
 
     def __init__(self, args):
         super().__init__(args)
-        self.orig_settings = tcgetattr(stdin)
+        #self.orig_settings = tcgetattr(stdin)
         self.p = PyAudio()
 
+    # def on_release(self, key):
+    #     print('{0} release'.format(
+    #         key))
+    #     if key == Key.esc:
+    #         # Stop listener
+    #         return False 
+
     def key_pressed(self):
-        return select([stdin], [], [], 0) == ([stdin], [], [])
+        # Collect events until released
+        return keyboard.is_pressed('space')
+        #return select([stdin], [], [], 0) == ([stdin], [], [])
 
     def show_input(self):
-        tcsetattr(stdin, TCSADRAIN, self.orig_settings)
+        None
+        #tcsetattr(stdin, TCSADRAIN, self.orig_settings)
 
     def hide_input(self):
-        tty.setcbreak(stdin.fileno())
+        None
+        #tty.setcbreak(stdin.fileno())
 
     def next_name(self, name):
         name += '.wav'
@@ -106,15 +121,17 @@ class CollectScript(BaseScript):
 
     def wait_to_continue(self):
         while True:
-            c = stdin.read(1)
-            if c == self.RECORD_KEY:
-                return True
-            elif ord(c) == self.EXIT_KEY_CODE:
-                return False
+            # Wait for the next event.
+            event = keyboard.read_event()
+            if event.event_type == keyboard.KEY_DOWN:
+                if event.name == self.RECORD_KEY:
+                    return True
+                elif event.name == self.EXIT_KEY_CODE:
+                    return False
 
     def record_until_key(self):
         def should_return():
-            return self.key_pressed() and stdin.read(1) == self.RECORD_KEY
+            return self.key_pressed()
 
         return record_until(self.p, should_return, self.args)
 
@@ -131,18 +148,21 @@ class CollectScript(BaseScript):
             if not self.wait_to_continue():
                 break
 
+            time.sleep(0.25)
+
             print('Recording...')
             d = self.record_until_key()
             name = self.next_name(args.file_label)
             save_audio(name, d, args)
             print('Saved as ' + name)
+            print()
 
     def run(self):
         try:
             self.hide_input()
             self._run()
         finally:
-            tcsetattr(stdin, TCSADRAIN, self.orig_settings)
+            #tcsetattr(stdin, TCSADRAIN, self.orig_settings)
             self.p.terminate()
 
 
