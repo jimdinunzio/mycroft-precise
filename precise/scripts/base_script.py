@@ -48,4 +48,4 @@ class BaseScript:
         try:
             script.run()
         except KeyboardInterrupt:
-            print()
+            print("Keyboard Interrupt")

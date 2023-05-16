@@ -48,9 +48,9 @@ elif [ "$os" = "Darwin" ]; then
     fi
 fi
 
-if [ ! -x "$VENV/bin/python" ]; then python3 -m venv "$VENV" --without-pip; fi
-source "$VENV/bin/activate"
-if [ ! -x "$VENV/bin/pip" ]; then curl https://bootstrap.pypa.io/get-pip.py | python; fi
+#if [ ! -x "$VENV/bin/python" ]; then python3 -m venv "$VENV" --without-pip; fi
+#source "$VENV/bin/activate"
+#if [ ! -x "$VENV/bin/pip" ]; then curl https://bootstrap.pypa.io/get-pip.py | python; fi
 
 arch="$(python -c 'import platform; print(platform.machine())')"
 

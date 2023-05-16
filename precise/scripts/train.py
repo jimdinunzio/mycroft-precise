@@ -108,6 +108,7 @@ class TrainScript(BaseScript):
         self.callbacks = [
             checkpoint, TensorBoard(
                 log_dir=self.model_base + '.logs',
+                histogram_freq=1
             ), LambdaCallback(on_epoch_end=on_epoch_end)
         ]
 
