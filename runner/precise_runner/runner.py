@@ -189,17 +189,19 @@ class PreciseRunner(object):
         if getattr(stream.read, '__func__', None) is pyaudio.Stream.read:
             stream.read = lambda x: pyaudio.Stream.read(stream, x // 2, False)
 
-    def start(self):
-        """Start listening from stream"""
+    def init_stream(self):
         if self.stream is None:
             from pyaudio import PyAudio, paInt16
             self.pa = PyAudio()
             self.stream = self.pa.open(
                 16000, 1, paInt16, True, frames_per_buffer=self.chunk_size
             )
+        self._wrap_stream_read(self.stream)        
 
-        self._wrap_stream_read(self.stream)
+    def start(self):
+        """Start listening from stream"""
 
+        self.init_stream()
         self.engine.start()
         self.running = True
         self.is_paused = False
@@ -232,12 +234,17 @@ class PreciseRunner(object):
     def _handle_predictions(self):
         """Continuously check Precise process output"""
         while self.running:
-            chunk = self.stream.read(self.chunk_size)
+            try:
+                chunk = self.stream.read(self.chunk_size)
 
-            if self.is_paused:
-                continue
+                if self.is_paused:
+                    continue
 
-            prob = self.engine.get_prediction(chunk)
-            self.on_prediction(prob)
-            if self.detector.update(prob):
-                self.on_activation()
+                prob = self.engine.get_prediction(chunk)
+                self.on_prediction(prob)
+                if self.detector.update(prob):
+                    self.on_activation()
+            except OSError as e:
+                print("PreciseRunner OSError {}, reiniting stream".format(e.errno))
+                self.stream = None
+                self.init_stream()
